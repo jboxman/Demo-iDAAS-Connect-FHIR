@@ -1,6 +1,6 @@
 # Change Directory to solution on local machine
 echo $PWD
-echo "iDAAS - Connect Data Distribution"
+echo "Demo iDAAS Connect FHIR"
 cd $PWD
 cd ../
 
@@ -9,5 +9,5 @@ echo "Maven Build Completed"
 /usr/local/bin/mvn package
 echo "Maven Release Completed"
 cd target
-cp idaas-connect-*.jar idaas-connect-fhir.jar
+cp idaas-connect-*.jar demo-idaas-connect-fhir.jar
 echo "Copied Release Specific Version to General version"
