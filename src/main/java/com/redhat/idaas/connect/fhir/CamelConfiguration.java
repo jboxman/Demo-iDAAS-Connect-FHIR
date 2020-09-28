@@ -17,6 +17,7 @@
 package com.redhat.idaas.connect.fhir;
 
 import ca.uhn.fhir.store.IAuditDataStore;
+import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.MultipleConsumersSupport;
@@ -24,8 +25,10 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.kafka.KafkaComponent;
 import org.apache.camel.component.kafka.KafkaConstants;
 import org.apache.camel.component.kafka.KafkaEndpoint;
+import org.apache.camel.component.servlet.CamelHttpTransportServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import sun.util.calendar.BaseCalendar;
@@ -44,6 +47,18 @@ public class CamelConfiguration extends RouteBuilder {
   private KafkaComponent kafkaComponent(KafkaEndpoint kafkaEndpoint){
     KafkaComponent kafka = new KafkaComponent();
     return kafka;
+  }
+
+  @Bean
+  ServletRegistrationBean camelServlet() {
+    // use a @Bean to register the Camel servlet which we need to do
+    // because we want to use the camel-servlet component for the Camel REST service
+    ServletRegistrationBean mapping = new ServletRegistrationBean();
+    mapping.setName("CamelServlet");
+    mapping.setLoadOnStartup(1);
+    mapping.setServlet(new CamelHttpTransportServlet());
+    mapping.addUrlMappings("/camel/*");
+    return mapping;
   }
 
   /*
@@ -99,7 +114,7 @@ public class CamelConfiguration extends RouteBuilder {
         // set Auditing Properties
         .setProperty("processingtype").constant("data")
         .setProperty("appname").constant("iDAAS-Connect-FHIR")
-        .setProperty("messagetrigger").constant("AllergyIntollerance")
+        .setProperty("messagetrigger").constant("allergyintollerance")
         .setProperty("component").simple("${routeId}")
         .setProperty("camelID").simple("${camelId}")
         .setProperty("exchangeID").simple("${exchangeId}")
@@ -111,62 +126,24 @@ public class CamelConfiguration extends RouteBuilder {
         .wireTap("direct:auditing")
         // Send To Topic
         .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_allergyintellorance&brokers=localhost:9092")
-        //.setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
-        //.to("jetty:http://localhost:8090/fhir-server/api/v4/allergyintollerance?bridgeEndpoint=true&exchangePattern=InOut")
+        .setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
+        .to("jetty:http://localhost:8090/fhir-server/api/v4/AllergyIntollerance?bridgeEndpoint=true&exchangePattern=InOut")
         //Process Response
-        //.convertBodyTo(String.class)
-        // set Auditing Properties
-        //.setProperty("processingtype").constant("data")
-        //.setProperty("appname").constant("iDAAS-Connect-FHIR")
-        //.setProperty("industrystd").constant("FHIR")
-        //.setProperty("messagetrigger").constant("allergyintollerance")
-        //.setProperty("component").simple("${routeId}")
-        //.setProperty("processname").constant("Response")
-        //.setProperty("camelID").simple("${camelId}")
-        //.setProperty("exchangeID").simple("${exchangeId}")
-        //.setProperty("internalMsgID").simple("${id}")
-        //.setProperty("bodyData").simple("${body}")
-        //.setProperty("auditdetails").constant("allergyintollerance FHIR response message received")
-        // iDAAS DataHub Processing
-        //.wireTap("direct:auditing")// Invoke External FHIR Server
-    ;
-    from("servlet://consent")
-        .routeId("FHIRConsent")
         .convertBodyTo(String.class)
         // set Auditing Properties
         .setProperty("processingtype").constant("data")
         .setProperty("appname").constant("iDAAS-Connect-FHIR")
         .setProperty("industrystd").constant("FHIR")
-        .setProperty("messagetrigger").constant("Consent")
+        .setProperty("messagetrigger").constant("allergyintollerance")
         .setProperty("component").simple("${routeId}")
+        .setProperty("processname").constant("Response")
         .setProperty("camelID").simple("${camelId}")
         .setProperty("exchangeID").simple("${exchangeId}")
         .setProperty("internalMsgID").simple("${id}")
         .setProperty("bodyData").simple("${body}")
-        .setProperty("processname").constant("Input")
-        .setProperty("auditdetails").constant("Consent message received")
+        .setProperty("auditdetails").constant("Allergy Intollerance FHIR response message received")
         // iDAAS DataHub Processing
-        .wireTap("direct:auditing")
-        // Send To Topic
-        .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_consent&brokers=localhost:9092")
-        //.setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
-        //.to("jetty:http://localhost:8090/fhir-server/api/v4/consent?bridgeEndpoint=true&exchangePattern=InOut")
-        //Process Response
-        //.convertBodyTo(String.class)
-        // set Auditing Properties
-        //.setProperty("processingtype").constant("data")
-        //.setProperty("appname").constant("iDAAS-Connect-FHIR")
-        //.setProperty("industrystd").constant("FHIR")
-        //.setProperty("messagetrigger").constant("consent")
-        //.setProperty("component").simple("${routeId}")
-        //.setProperty("processname").constant("Response")
-        //.setProperty("camelID").simple("${camelId}")
-        //.setProperty("exchangeID").simple("${exchangeId}")
-        //.setProperty("internalMsgID").simple("${id}")
-        //.setProperty("bodyData").simple("${body}")
-        //.setProperty("auditdetails").constant("consent FHIR response message received")
-        // iDAAS DataHub Processing
-        //.wireTap("direct:auditing")
+        .wireTap("direct:auditing")// Invoke External FHIR Server
     ;
     from("servlet://condition")
         .routeId("FHIRCondition")
@@ -175,7 +152,7 @@ public class CamelConfiguration extends RouteBuilder {
         .setProperty("processingtype").constant("data")
         .setProperty("appname").constant("iDAAS-Connect-FHIR")
         .setProperty("industrystd").constant("FHIR")
-        .setProperty("messagetrigger").constant("Condition")
+        .setProperty("messagetrigger").constant("condition")
         .setProperty("component").simple("${routeId}")
         .setProperty("camelID").simple("${camelId}")
         .setProperty("exchangeID").simple("${exchangeId}")
@@ -187,24 +164,62 @@ public class CamelConfiguration extends RouteBuilder {
         .wireTap("direct:auditing")
         // Send To Topic
         .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_condition&brokers=localhost:9092")
-        //.setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
-        //.to("jetty:http://localhost:8090/fhir-server/api/v4/communication?bridgeEndpoint=true&exchangePattern=InOut")
+        .setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
+        .to("jetty:http://localhost:8090/fhir-server/api/v4/Condition?bridgeEndpoint=true&exchangePattern=InOut")
         //Process Response
-        //.convertBodyTo(String.class)
+        .convertBodyTo(String.class)
         // set Auditing Properties
-        //.setProperty("processingtype").constant("data")
-        //.setProperty("appname").constant("iDAAS-Connect-FHIR")
-        //.setProperty("industrystd").constant("FHIR")
-        //.setProperty("messagetrigger").constant("condition")
-        //.setProperty("component").simple("${routeId}")
-        //.setProperty("processname").constant("Response")
-        //.setProperty("camelID").simple("${camelId}")
-        //.setProperty("exchangeID").simple("${exchangeId}")
-        //.setProperty("internalMsgID").simple("${id}")
-        //.setProperty("bodyData").simple("${body}")
-        //.setProperty("auditdetails").constant("condition FHIR response message received")
+        .setProperty("processingtype").constant("data")
+        .setProperty("appname").constant("iDAAS-Connect-FHIR")
+        .setProperty("industrystd").constant("FHIR")
+        .setProperty("messagetrigger").constant("condition")
+        .setProperty("component").simple("${routeId}")
+        .setProperty("processname").constant("Response")
+        .setProperty("camelID").simple("${camelId}")
+        .setProperty("exchangeID").simple("${exchangeId}")
+        .setProperty("internalMsgID").simple("${id}")
+        .setProperty("bodyData").simple("${body}")
+        .setProperty("auditdetails").constant("condition FHIR response message received")
         // iDAAS DataHub Processing
-        //.wireTap("direct:auditing")
+        .wireTap("direct:auditing")
+    ;
+    from("servlet://consent")
+            .routeId("FHIRConsent")
+            .convertBodyTo(String.class)
+            // set Auditing Properties
+            .setProperty("processingtype").constant("data")
+            .setProperty("appname").constant("iDAAS-Connect-FHIR")
+            .setProperty("industrystd").constant("FHIR")
+            .setProperty("messagetrigger").constant("consent")
+            .setProperty("component").simple("${routeId}")
+            .setProperty("camelID").simple("${camelId}")
+            .setProperty("exchangeID").simple("${exchangeId}")
+            .setProperty("internalMsgID").simple("${id}")
+            .setProperty("bodyData").simple("${body}")
+            .setProperty("processname").constant("Input")
+            .setProperty("auditdetails").constant("Consent message received")
+            // iDAAS DataHub Processing
+            .wireTap("direct:auditing")
+            // Send To Topic
+            .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_consent&brokers=localhost:9092")
+            .setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
+            .to("jetty:http://localhost:8090/fhir-server/api/v4/Consent?bridgeEndpoint=true&exchangePattern=InOut")
+            //Process Response
+            .convertBodyTo(String.class)
+            // set Auditing Properties
+            .setProperty("processingtype").constant("data")
+            .setProperty("appname").constant("iDAAS-Connect-FHIR")
+            .setProperty("industrystd").constant("FHIR")
+            .setProperty("messagetrigger").constant("consent")
+            .setProperty("component").simple("${routeId}")
+            .setProperty("processname").constant("Response")
+            .setProperty("camelID").simple("${camelId}")
+            .setProperty("exchangeID").simple("${exchangeId}")
+            .setProperty("internalMsgID").simple("${id}")
+            .setProperty("bodyData").simple("${body}")
+            .setProperty("auditdetails").constant("consent FHIR response message received")
+            // iDAAS DataHub Processing
+            .wireTap("direct:auditing")
     ;
     from("servlet://measure")
         .routeId("FHIRMeasure")
@@ -213,7 +228,7 @@ public class CamelConfiguration extends RouteBuilder {
         .setProperty("processingtype").constant("data")
         .setProperty("appname").constant("iDAAS-Connect-FHIR")
         .setProperty("industrystd").constant("FHIR")
-        .setProperty("messagetrigger").constant("Measure")
+        .setProperty("messagetrigger").constant("measure")
         .setProperty("component").simple("${routeId}")
         .setProperty("camelID").simple("${camelId}")
         .setProperty("exchangeID").simple("${exchangeId}")
@@ -225,24 +240,24 @@ public class CamelConfiguration extends RouteBuilder {
         .wireTap("direct:auditing")
         // Send To Topic
         .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_measure&brokers=localhost:9092")
-        //.setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
-        //.to("jetty:http://localhost:8090/fhir-server/api/v4/measure?bridgeEndpoint=true&exchangePattern=InOut")
+        .setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
+        .to("jetty:http://localhost:8090/fhir-server/api/v4/Measure?bridgeEndpoint=true&exchangePattern=InOut")
         //Process Response
-        //.convertBodyTo(String.class)
+        .convertBodyTo(String.class)
         // set Auditing Properties
-        //.setProperty("processingtype").constant("data")
-        //.setProperty("appname").constant("iDAAS-Connect-FHIR")
-        //.setProperty("industrystd").constant("FHIR")
-        //.setProperty("messagetrigger").constant("measure")
-        //.setProperty("component").simple("${routeId}")
-        //.setProperty("processname").constant("Response")
-        //.setProperty("camelID").simple("${camelId}")
-        //.setProperty("exchangeID").simple("${exchangeId}")
-        //.setProperty("internalMsgID").simple("${id}")
-        //.setProperty("bodyData").simple("${body}")
-        //.setProperty("auditdetails").constant("measure FHIR response message received")
+        .setProperty("processingtype").constant("data")
+        .setProperty("appname").constant("iDAAS-Connect-FHIR")
+        .setProperty("industrystd").constant("FHIR")
+        .setProperty("messagetrigger").constant("measure")
+        .setProperty("component").simple("${routeId}")
+        .setProperty("processname").constant("Response")
+        .setProperty("camelID").simple("${camelId}")
+        .setProperty("exchangeID").simple("${exchangeId}")
+        .setProperty("internalMsgID").simple("${id}")
+        .setProperty("bodyData").simple("${body}")
+        .setProperty("auditdetails").constant("measure FHIR response message received")
         // iDAAS DataHub Processing
-        //.wireTap("direct:auditing")
+        .wireTap("direct:auditing")
     ;
     from("servlet://measurereport")
         .routeId("FHIRMeasureReport")
@@ -251,7 +266,7 @@ public class CamelConfiguration extends RouteBuilder {
         .setProperty("processingtype").constant("data")
         .setProperty("appname").constant("iDAAS-Connect-FHIR")
         .setProperty("industrystd").constant("FHIR")
-        .setProperty("messagetrigger").constant("MeasureReport")
+        .setProperty("messagetrigger").constant("measurereport")
         .setProperty("component").simple("${routeId}")
         .setProperty("camelID").simple("${camelId}")
         .setProperty("exchangeID").simple("${exchangeId}")
@@ -263,24 +278,24 @@ public class CamelConfiguration extends RouteBuilder {
         .wireTap("direct:auditing")
         // Send To Topic
         .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_measurereport&brokers=localhost:9092")
-        //.setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
-        //.to("jetty:http://localhost:8090/fhir-server/api/v4/measurereport?bridgeEndpoint=true&exchangePattern=InOut")
+        .setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
+        .to("jetty:http://localhost:8090/fhir-server/api/v4/MeasureReport?bridgeEndpoint=true&exchangePattern=InOut")
         //Process Response
-        //.convertBodyTo(String.class)
+        .convertBodyTo(String.class)
         // set Auditing Properties
-        //.setProperty("processingtype").constant("data")
-        //.setProperty("appname").constant("iDAAS-Connect-FHIR")
-        //.setProperty("industrystd").constant("FHIR")
-        //.setProperty("messagetrigger").constant("measurereport")
-        //.setProperty("component").simple("${routeId}")
-        //.setProperty("processname").constant("Response")
-        //.setProperty("camelID").simple("${camelId}")
-        //.setProperty("exchangeID").simple("${exchangeId}")
-        //.setProperty("internalMsgID").simple("${id}")
-        //.setProperty("bodyData").simple("${body}")
-        //.setProperty("auditdetails").constant("measurereport FHIR response message received")
+        .setProperty("processingtype").constant("data")
+        .setProperty("appname").constant("iDAAS-Connect-FHIR")
+        .setProperty("industrystd").constant("FHIR")
+        .setProperty("messagetrigger").constant("measurereport")
+        .setProperty("component").simple("${routeId}")
+        .setProperty("processname").constant("Response")
+        .setProperty("camelID").simple("${camelId}")
+        .setProperty("exchangeID").simple("${exchangeId}")
+        .setProperty("internalMsgID").simple("${id}")
+        .setProperty("bodyData").simple("${body}")
+        .setProperty("auditdetails").constant("measurereport FHIR response message received")
         // iDAAS DataHub Processing
-        //.wireTap("direct:auditing")
+        .wireTap("direct:auditing")
     ;
     from("servlet://patient")
         .routeId("FHIRPatient")
@@ -289,7 +304,7 @@ public class CamelConfiguration extends RouteBuilder {
         .setProperty("processingtype").constant("data")
         .setProperty("appname").constant("iDAAS-Connect-FHIR")
         .setProperty("industrystd").constant("FHIR")
-        .setProperty("messagetrigger").constant("Patient")
+        .setProperty("messagetrigger").constant("patient")
         .setProperty("component").simple("${routeId}")
         .setProperty("camelID").simple("${camelId}")
         .setProperty("exchangeID").simple("${exchangeId}")
@@ -301,24 +316,24 @@ public class CamelConfiguration extends RouteBuilder {
         .wireTap("direct:auditing")
         // Send To Topic
         .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_patient&brokers=localhost:9092")
-        //.setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
-        //.to("jetty:http://localhost:8090/fhir-server/api/v4/patient?bridgeEndpoint=true&exchangePattern=InOut")
+        .setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
+        .to("jetty:http://localhost:8090/fhir-server/api/v4/Patient?bridgeEndpoint=true&exchangePattern=InOut")
         //Process Response
-        //.convertBodyTo(String.class)
-        // set Auditing Properties
-        //.setProperty("processingtype").constant("data")
-        //.setProperty("appname").constant("iDAAS-Connect-FHIR")
-        //.setProperty("industrystd").constant("FHIR")
-        //.setProperty("messagetrigger").constant("patient")
-        //.setProperty("component").simple("${routeId}")
-        //.setProperty("processname").constant("Response")
-        //.setProperty("camelID").simple("${camelId}")
-        //.setProperty("exchangeID").simple("${exchangeId}")
-        //.setProperty("internalMsgID").simple("${id}")
-        //.setProperty("bodyData").simple("${body}")
-        //.setProperty("auditdetails").constant("patient FHIR response message received")
+        .convertBodyTo(String.class)
+        //set Auditing Properties
+        .setProperty("processingtype").constant("data")
+        .setProperty("appname").constant("iDAAS-Connect-FHIR")
+        .setProperty("industrystd").constant("FHIR")
+        .setProperty("messagetrigger").constant("patient")
+        .setProperty("component").simple("${routeId}")
+        .setProperty("processname").constant("Response")
+        .setProperty("camelID").simple("${camelId}")
+        .setProperty("exchangeID").simple("${exchangeId}")
+        .setProperty("internalMsgID").simple("${id}")
+        .setProperty("bodyData").simple("${body}")
+        .setProperty("auditdetails").constant("patient FHIR response message received")
         // iDAAS DataHub Processing
-        //.wireTap("direct:auditing")
+        .wireTap("direct:auditing")
     ;
     from("servlet://problem")
             .routeId("FHIRProblem")
@@ -327,7 +342,7 @@ public class CamelConfiguration extends RouteBuilder {
             .setProperty("processingtype").constant("data")
             .setProperty("appname").constant("iDAAS-Connect-FHIR")
             .setProperty("industrystd").constant("FHIR")
-            .setProperty("messagetrigger").constant("Problem")
+            .setProperty("messagetrigger").constant("problem")
             .setProperty("component").simple("${routeId}")
             .setProperty("camelID").simple("${camelId}")
             .setProperty("exchangeID").simple("${exchangeId}")
@@ -339,24 +354,24 @@ public class CamelConfiguration extends RouteBuilder {
             .wireTap("direct:auditing")
             // Send To Topic
             .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_problem&brokers=localhost:9092")
-            //.setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
-            //.to("jetty:http://localhost:8090/fhir-server/api/v4/patient?bridgeEndpoint=true&exchangePattern=InOut")
+            .setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
+            .to("jetty:http://localhost:8090/fhir-server/api/v4/Problem?bridgeEndpoint=true&exchangePattern=InOut")
             //Process Response
             //.convertBodyTo(String.class)
             // set Auditing Properties
-            //.setProperty("processingtype").constant("data")
-            //.setProperty("appname").constant("iDAAS-Connect-FHIR")
-            //.setProperty("industrystd").constant("FHIR")
-            //.setProperty("messagetrigger").constant("patient")
-            //.setProperty("component").simple("${routeId}")
-            //.setProperty("processname").constant("Response")
-            //.setProperty("camelID").simple("${camelId}")
-            //.setProperty("exchangeID").simple("${exchangeId}")
-            //.setProperty("internalMsgID").simple("${id}")
-            //.setProperty("bodyData").simple("${body}")
-            //.setProperty("auditdetails").constant("patient FHIR response message received")
+            .setProperty("processingtype").constant("data")
+            .setProperty("appname").constant("iDAAS-Connect-FHIR")
+            .setProperty("industrystd").constant("FHIR")
+            .setProperty("messagetrigger").constant("problem")
+            .setProperty("component").simple("${routeId}")
+            .setProperty("processname").constant("Response")
+            .setProperty("camelID").simple("${camelId}")
+            .setProperty("exchangeID").simple("${exchangeId}")
+            .setProperty("internalMsgID").simple("${id}")
+            .setProperty("bodyData").simple("${body}")
+            .setProperty("auditdetails").constant("problem FHIR response message received")
             // iDAAS DataHub Processing
-            //.wireTap("direct:auditing")
+            .wireTap("direct:auditing")
     ;
     from("servlet://researchstudy")
         .routeId("FHIRResearchStudy")
@@ -365,7 +380,7 @@ public class CamelConfiguration extends RouteBuilder {
          .setProperty("processingtype").constant("data")
          .setProperty("appname").constant("iDAAS-Connect-FHIR")
          .setProperty("industrystd").constant("FHIR")
-         .setProperty("messagetrigger").constant("ResearchStudy")
+         .setProperty("messagetrigger").constant("researchstudy")
          .setProperty("component").simple("${routeId}")
          .setProperty("camelID").simple("${camelId}")
          .setProperty("exchangeID").simple("${exchangeId}")
@@ -378,24 +393,24 @@ public class CamelConfiguration extends RouteBuilder {
          .wireTap("direct:auditing")
          // Send To Topic
          .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_researchstudy&brokers=localhost:9092")
-         //.setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
-         //.to("jetty:http://localhost:8090/fhir-server/api/v4/researchstudy?bridgeEndpoint=true&exchangePattern=InOut")
+         .setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
+         .to("jetty:http://localhost:8090/fhir-server/api/v4/ResearchStudy?bridgeEndpoint=true&exchangePattern=InOut")
          //Process Response
-         //.convertBodyTo(String.class)
+         .convertBodyTo(String.class)
          // set Auditing Properties
-         //.setProperty("processingtype").constant("data")
-         //.setProperty("appname").constant("iDAAS-Connect-FHIR")
-         //.setProperty("industrystd").constant("FHIR")
-         //.setProperty("messagetrigger").constant("researchstudy")
-         //.setProperty("component").simple("${routeId}")
-         //.setProperty("processname").constant("Response")
-         //.setProperty("camelID").simple("${camelId}")
-         //.setProperty("exchangeID").simple("${exchangeId}")
-         //.setProperty("internalMsgID").simple("${id}")
-         //.setProperty("bodyData").simple("${body}")
-         //.setProperty("auditdetails").constant("researchstudy FHIR response message received")
+         .setProperty("processingtype").constant("data")
+         .setProperty("appname").constant("iDAAS-Connect-FHIR")
+         .setProperty("industrystd").constant("FHIR")
+         .setProperty("messagetrigger").constant("researchstudy")
+         .setProperty("component").simple("${routeId}")
+         .setProperty("processname").constant("Response")
+         .setProperty("camelID").simple("${camelId}")
+         .setProperty("exchangeID").simple("${exchangeId}")
+         .setProperty("internalMsgID").simple("${id}")
+         .setProperty("bodyData").simple("${body}")
+         .setProperty("auditdetails").constant("researchstudy FHIR response message received")
          // iDAAS DataHub Processing
-         //.wireTap("direct:auditing")
+         .wireTap("direct:auditing")
     ;
 
     /*
@@ -422,24 +437,24 @@ public class CamelConfiguration extends RouteBuilder {
             // Send To Topic
             .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_account&brokers=localhost:9092")
             // Invoke External FHIR Server
-            //.setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
-            //.to("https://localhost:9443/fhir-server/api/v4/account")
+            .setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
+            .to("jetty:http://localhost:8090/fhir-server/api/v4/Account?bridgeEndpoint=true&exchangePattern=InOut")
             // Process Response
-            //.convertBodyTo(String.class)
+            .convertBodyTo(String.class)
             // set Auditing Properties
-            //.setProperty("processingtype").constant("data")
-            //.setProperty("appname").constant("iDAAS-Connect-FHIR")
-            //.setProperty("industrystd").constant("FHIR")
-            //.setProperty("messagetrigger").constant("account")
-            //.setProperty("component").simple("${routeId}")
-            //.setProperty("processname").constant("Input")
-            //.setProperty("camelID").simple("${camelId}")
-            //.setProperty("exchangeID").simple("${exchangeId}")
-            //.setProperty("internalMsgID").simple("${id}")
-            //.setProperty("bodyData").simple("${body}")
-            //.setProperty("auditdetails").constant("account FHIR response message received")
+            .setProperty("processingtype").constant("data")
+            .setProperty("appname").constant("iDAAS-Connect-FHIR")
+            .setProperty("industrystd").constant("FHIR")
+            .setProperty("messagetrigger").constant("account")
+            .setProperty("component").simple("${routeId}")
+            .setProperty("processname").constant("Input")
+            .setProperty("camelID").simple("${camelId}")
+            .setProperty("exchangeID").simple("${exchangeId}")
+            .setProperty("internalMsgID").simple("${id}")
+            .setProperty("bodyData").simple("${body}")
+            .setProperty("auditdetails").constant("account FHIR response message received")
             // iDAAS DataHub Processing
-            //.wireTap("direct:auditing")
+            .wireTap("direct:auditing")
     ;
     from("servlet://fhirrcoverage")
             .routeId("FHIRCoverage")
@@ -461,24 +476,24 @@ public class CamelConfiguration extends RouteBuilder {
             // Send To Topic
             .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_coverage&brokers=localhost:9092")
             // Invoke External FHIR Server
-            //.setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
-            //.to("jetty:http://localhost:8090/fhir-server/api/v4/coverage?bridgeEndpoint=true&exchangePattern=InOut")
+            .setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
+            .to("jetty:http://localhost:8090/fhir-server/api/v4/Coverage?bridgeEndpoint=true&exchangePattern=InOut")
             // Process Response
-            //.convertBodyTo(String.class)
+            .convertBodyTo(String.class)
             // set Auditing Properties
-            //.setProperty("processingtype").constant("data")
-            //.setProperty("appname").constant("iDAAS-Connect-FHIR")
-            //.setProperty("industrystd").constant("FHIR")
-            //.setProperty("messagetrigger").constant("coverage")
-            //.setProperty("component").simple("${routeId}")
-            //.setProperty("processname").constant("Response")
-            //.setProperty("camelID").simple("${camelId}")
-            //.setProperty("exchangeID").simple("${exchangeId}")
-            //.setProperty("internalMsgID").simple("${id}")
-            //.setProperty("bodyData").simple("${body}")
-            //.setProperty("auditdetails").constant("coverage FHIR message response received")
+            .setProperty("processingtype").constant("data")
+            .setProperty("appname").constant("iDAAS-Connect-FHIR")
+            .setProperty("industrystd").constant("FHIR")
+            .setProperty("messagetrigger").constant("coverage")
+            .setProperty("component").simple("${routeId}")
+            .setProperty("processname").constant("Response")
+            .setProperty("camelID").simple("${camelId}")
+            .setProperty("exchangeID").simple("${exchangeId}")
+            .setProperty("internalMsgID").simple("${id}")
+            .setProperty("bodyData").simple("${body}")
+            .setProperty("auditdetails").constant("coverage FHIR message response received")
             // iDAAS DataHub Processing
-            //.wireTap("direct:auditing")
+            .wireTap("direct:auditing")
     ;
      from("servlet://http://localhost:8888/fhirclaim")
             .routeId("FHIRClaim")
@@ -500,7 +515,7 @@ public class CamelConfiguration extends RouteBuilder {
             .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_claim&brokers=localhost:9092")
             // Invoke External FHIR Server
             //.setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
-            //.to("jetty:http://localhost:8090/fhir-server/api/v4/claim?bridgeEndpoint=true&exchangePattern=InOut")
+            //.to("jetty:http://localhost:8090/fhir-server/api/v4/Claim?bridgeEndpoint=true&exchangePattern=InOut")
             //Process Response
             //.convertBodyTo(String.class)
             // set Auditing Properties
@@ -538,7 +553,7 @@ public class CamelConfiguration extends RouteBuilder {
             .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_claimresponse&brokers=localhost:9092")
             // Invoke External FHIR Server
             //.setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
-            //.to("jetty:http://localhost:8090/fhir-server/api/v4/claimresponse?bridgeEndpoint=true&exchangePattern=InOut")
+            //.to("jetty:http://localhost:8090/fhir-server/api/v4/ClaimResponse?bridgeEndpoint=true&exchangePattern=InOut")
             //Process Response
             //.convertBodyTo(String.class)
             // set Auditing Properties
@@ -556,7 +571,7 @@ public class CamelConfiguration extends RouteBuilder {
             // iDAAS DataHub Processing
             //.wireTap("direct:auditing")
     ;
-    from("servlet://http://localhost:8888/fhirexplanationofbenefits")
+    from("servlet://explanationofbenefits")
             .routeId("FHIRExplanationofbenefits")
             // set Auditing Properties
             .setProperty("processingtype").constant("data")
@@ -575,24 +590,24 @@ public class CamelConfiguration extends RouteBuilder {
             // Send To Topic
             .convertBodyTo(String.class).to("kafka://localhost:9092?topic=fhirsvr_explanationofbenefits&brokers=localhost:9092")
             // Invoke External FHIR Server
-            //.setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
-            //.to("jetty:http://localhost:8090/fhir-server/api/v4/explanationofbenefits?bridgeEndpoint=true&exchangePattern=InOut")
+            .setHeader(Exchange.CONTENT_TYPE,constant("application/json"))
+            .to("jetty:http://localhost:8090/fhir-server/api/v4/ExplanationOfBenefit?bridgeEndpoint=true&exchangePattern=InOut")
             //Process Response
-            //.convertBodyTo(String.class)
+            .convertBodyTo(String.class)
             // set Auditing Properties
-            //.setProperty("processingtype").constant("data")
-            //.setProperty("appname").constant("iDAAS-Connect-FHIR")
-            //.setProperty("industrystd").constant("FHIR")
-            //.setProperty("messagetrigger").constant("explanationofbenefits")
-            //.setProperty("component").simple("${routeId}")
-            //.setProperty("processname").constant("Response")
-            //.setProperty("camelID").simple("${camelId}")
-            //.setProperty("exchangeID").simple("${exchangeId}")
-            //.setProperty("internalMsgID").simple("${id}")
-            //.setProperty("bodyData").simple("${body}")
-            //.setProperty("auditdetails").constant("explanationofbenefits response FHIR response message received")
+            .setProperty("processingtype").constant("data")
+            .setProperty("appname").constant("iDAAS-Connect-FHIR")
+            .setProperty("industrystd").constant("FHIR")
+            .setProperty("messagetrigger").constant("explanationofbenefits")
+            .setProperty("component").simple("${routeId}")
+            .setProperty("processname").constant("Response")
+            .setProperty("camelID").simple("${camelId}")
+            .setProperty("exchangeID").simple("${exchangeId}")
+            .setProperty("internalMsgID").simple("${id}")
+            .setProperty("bodyData").simple("${body}")
+            .setProperty("auditdetails").constant("explanationofbenefits response FHIR response message received")
             // iDAAS DataHub Processing
-            //.wireTap("direct:auditing")
+            .wireTap("direct:auditing")
     ;
     /*
      *
