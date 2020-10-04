@@ -77,7 +77,7 @@ public class CamelConfiguration extends RouteBuilder {
     if (fhirServerVendor.equals("ibm"))
     {
       //.to("jetty:http://localhost:8090/fhir-server/api/v4/AdverseEvents?bridgeEndpoint=true&exchangePattern=InOut")
-      //fhirServerURI = "jetty:"+config.getIbmServer()+fhirResource+"?bridgeEndpoint=true&exchangePattern=InOut";
+      fhirServerURI = "jetty:"+config.getIbmURI()+fhirResource+"?bridgeEndpoint=true&exchangePattern=InOut";
     }
     if (fhirServerVendor.equals("hapi"))
     {

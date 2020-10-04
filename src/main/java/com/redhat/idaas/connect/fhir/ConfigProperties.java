@@ -26,12 +26,18 @@ public class ConfigProperties {
 
     private String fhirVendor;
 
+    private String ibmURI;
+
     public String getKafkaBrokers() {
         return kafkaBrokers;
     }
 
     public String getFhirVendor() {
         return fhirVendor;
+    }
+
+    public String getIbmURI() {
+        return ibmURI;
     }
 
     public void setKafkaBrokers(String KafkaBrokers) {
@@ -42,5 +48,6 @@ public class ConfigProperties {
         this.fhirVendor = FhirVendor;
     }
 
+    public void setIbmURI (String ibmURI) { this.ibmURI = ibmURI; }
 
 }
