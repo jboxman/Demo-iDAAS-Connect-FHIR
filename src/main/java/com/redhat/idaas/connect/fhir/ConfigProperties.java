@@ -24,47 +24,23 @@ public class ConfigProperties {
 
     private String kafkaBrokers;
 
-    private String FhirServerVendor;
-
-    private String HapiFhirServer;
-
-    private String IbmFhirServer;
-
-    private String MsftAzureFhirServer;
+    private String fhirVendor;
 
     public String getKafkaBrokers() {
         return kafkaBrokers;
     }
-    public String getFhirServerVendor() {
-        return FhirServerVendor;
+
+    public String getFhirVendor() {
+        return fhirVendor;
     }
 
-    public String getHapiFhirServer() {
-        return HapiFhirServer;
+    public void setKafkaBrokers(String KafkaBrokers) {
+        this.kafkaBrokers = KafkaBrokers;
     }
 
-    public String getIbmFhirServer() {
-        return IbmFhirServer;
+    public void setFhirVendor(String FhirVendor) {
+        this.fhirVendor = FhirVendor;
     }
 
-    public String getMsftAzureFhirServer() {
-        return MsftAzureFhirServer;
-    }
-
-    public void setFhirServerVendor(String FhirServerVendor) {
-        this.FhirServerVendor = FhirServerVendor;
-    }
-
-    public void setHapiFhirServer(String HapiFhirServer) {
-        this.HapiFhirServer = HapiFhirServer;
-    }
-
-    public void setIbmFhirServer(String IbmFhirServer) {
-        this.IbmFhirServer = IbmFhirServer;
-    }
-
-    public void setMsftAzureFhirServer(String MsftAzureFhirServer) {
-        this.MsftAzureFhirServer = MsftAzureFhirServer;
-    }
 
 }
