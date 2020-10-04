@@ -81,11 +81,11 @@ public class CamelConfiguration extends RouteBuilder {
     }
     if (fhirServerVendor.equals("hapi"))
     {
-      //fhirServerURI = "jetty:"+config.getHapiServer()+fhirResource+"?bridgeEndpoint=true&exchangePattern=InOut";
+      fhirServerURI = "jetty:"+config.getHapiURI()+fhirResource+"?bridgeEndpoint=true&exchangePattern=InOut";
     }
     if (fhirServerVendor.equals("microsoft"))
     {
-      //fhirServerURI = "jetty:"+config.getMsftServer()+fhirResource+"?bridgeEndpoint=true&exchangePattern=InOut";
+      fhirServerURI = "jetty:"+config.getMicrosoftURI()+fhirResource+"?bridgeEndpoint=true&exchangePattern=InOut";
     }
     return fhirServerURI;
   }

@@ -27,6 +27,8 @@ public class ConfigProperties {
     private String fhirVendor;
 
     private String ibmURI;
+    private String hapiURI;
+    private String microsoftURI;
 
     public String getKafkaBrokers() {
         return kafkaBrokers;
@@ -40,6 +42,14 @@ public class ConfigProperties {
         return ibmURI;
     }
 
+    public String getHapiURI() {
+        return hapiURI;
+    }
+
+    public String getMicrosoftURI() {
+        return microsoftURI;
+    }
+
     public void setKafkaBrokers(String KafkaBrokers) {
         this.kafkaBrokers = KafkaBrokers;
     }
@@ -49,5 +59,7 @@ public class ConfigProperties {
     }
 
     public void setIbmURI (String ibmURI) { this.ibmURI = ibmURI; }
+    public void setHapiURI (String hapiRI) { this.hapiURI = hapiURI; }
+    public void setMicrosoftURI (String microsoftURI) { this.microsoftURI = microsoftURI; }
 
 }
