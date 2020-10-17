@@ -77,12 +77,14 @@ idaas.fhirVendor=hapi
 idaas.fhirVendor=microsoft
 
 Supported properties include:
-```properties
+
+```
 idaas.kafkaBrokers=localhost:9092 #a comma separated list of kafka brokers e.g. host1:port1,host2:port2
 idaas.fhirVendor=ibm
 idaas.ibmURI=http://localhost:8090/fhir-server/api/v4/
 idaas.hapiURI=http://localhost:8080/hapi/api/v4/
 idaas.msoftURI=http://localhost:9999/microsoftapi/api/v4/
+```
 
 ## Ongoing Enhancements
 We maintain all enhancements within the Git Hub portal under the 
